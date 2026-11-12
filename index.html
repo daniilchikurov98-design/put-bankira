@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E6B4E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Путь банкира">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}</style>
+<title>Путь банкира</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: phone-first app — sticky progress header, bottom tab bar; Program = list of months → month screen with numbered steps */
+:root{
+  --bg:#F3F6F4; --surface:#FFFFFF; --fg:#11211B; --muted:#5B6E66; --line:#D8E2DD;
+  --accent:#0E6B4E; --accent-soft:#E1F0EA; --on-accent:#FFFFFF; --gold:#8A6210; --gold-soft:#F6EDD8;
+  --display:"Unbounded","Manrope",system-ui,sans-serif;
+  --body:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1411; --surface:#13201B; --fg:#E4EEE9; --muted:#93A69E; --line:#24352E;
+  --accent:#4CC79A; --accent-soft:#163329; --on-accent:#0B1411; --gold:#D9AE55; --gold-soft:#2E2614; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1411; --surface:#13201B; --fg:#E4EEE9; --muted:#93A69E; --line:#24352E;
+  --accent:#4CC79A; --accent-soft:#163329; --on-accent:#0B1411; --gold:#D9AE55; --gold-soft:#2E2614; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(88px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.brand h1{font-size:19px;font-weight:700}
+.pct{font-family:var(--mono);font-size:13px;color:var(--accent);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:3px;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+section.view{padding-block:18px 8px;display:grid;gap:14px}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700;margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px}
+.card h3{font-size:15px}
+p{margin:0}
+.note{font-size:13px;color:var(--muted)}
+
+/* Continue card */
+.cont{display:grid;gap:12px;background:var(--accent);color:var(--on-accent);border-radius:18px;padding:18px;text-decoration:none}
+.cont .lbl{color:inherit;opacity:.8}
+.cont h2{font-size:19px;line-height:1.25}
+.cont .go{justify-self:start;font-weight:700;font-size:14px;background:var(--on-accent);color:var(--accent);border-radius:999px;padding:8px 16px}
+
+details.goal{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+details.goal summary{cursor:pointer;padding:14px 16px;font-weight:600;list-style:none;display:flex;justify-content:space-between}
+details.goal summary::-webkit-details-marker{display:none}
+details.goal summary::after{content:"+";color:var(--muted);font-family:var(--mono)}
+details.goal[open] summary::after{content:"−"}
+.goalbody{padding:0 16px 16px;display:grid;gap:10px;font-size:14px}
+
+.quarter{display:grid;gap:8px}
+.quarter h2{font-size:14px;font-weight:600;font-family:var(--body);color:var(--muted)}
+.quarter h2 b{font-family:var(--mono);color:var(--gold);font-weight:500;margin-right:6px}
+.mrow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;text-decoration:none;color:var(--fg)}
+.mrow.cur{border-color:var(--accent)}
+.mnum{font-family:var(--mono);font-size:12px;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-variant-numeric:tabular-nums}
+.mnum.done{background:var(--accent);color:var(--on-accent)}
+.mrow .t{min-width:0;font-weight:600;font-size:14.5px;line-height:1.3}
+.mrow .c{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Month screen */
+.back{justify-self:start;text-decoration:none;font-weight:600;font-size:14px;padding:6px 0}
+.mhead{display:grid;gap:6px}
+.mhead h2{font-size:22px;line-height:1.2}
+.simple{font-size:15px;background:var(--gold-soft);border-radius:14px;padding:14px}
+.steps{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.step{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer}
+.step input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent)}
+.step small{display:block;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.step.exam{background:var(--gold-soft);border-color:transparent}
+.step.exam small{color:var(--gold)}
+.step:has(input:checked) span{opacity:.6}
+.great{display:grid;gap:4px;padding-left:12px;border-left:3px solid var(--accent)}
+.great b{font-size:14px}
+.great span{font-size:14px}
+.great em{font-style:normal;font-size:13px;color:var(--muted)}
+details.more{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+details.more summary{cursor:pointer;padding:13px 14px;font-weight:600;font-size:14.5px;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:"+";color:var(--muted);font-family:var(--mono)}
+details.more[open] summary::after{content:"−"}
+.morebody{padding:0 14px 14px;display:grid;gap:8px;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--bg);border:1px solid var(--line)}
+.links{display:grid;gap:2px;margin:0;padding:0;list-style:none}
+.links a{display:block;padding:9px 0;border-bottom:1px solid var(--line);text-decoration:none;font-size:14px;font-weight:600}
+.links a span{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.links li:last-child a{border-bottom:0}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pager a{text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--fg)}
+.pager a small{display:block;color:var(--muted);font-size:11px}
+.pager a.r{text-align:right;grid-column:2}
+
+/* Lists */
+.list{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+.list li{display:grid;gap:2px;font-size:14px}
+.list li b{font-weight:600}
+.list li span{color:var(--muted);font-size:13px}
+.list li .take{color:var(--fg);font-size:13.5px}
+.tag{font-family:var(--mono);font-size:11px;color:var(--accent)}
+.tag.adv{color:var(--gold)}
+.howto{display:grid;gap:10px;margin:0;padding:0;list-style:none;counter-reset:s}
+.howto li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px;font-size:14.5px}
+.howto li::before{content:counter(s);font-family:var(--mono);font-size:13px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent)}
+.cmds{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:14px;align-items:center}
+.cmds code{font-family:var(--mono);font-size:13px;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:6px;justify-self:start}
+.reset{background:none;border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:8px 12px;cursor:pointer;justify-self:start;font-size:13px}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(4,1fr);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs a{text-decoration:none;color:var(--muted);font-size:11.5px;font-weight:600;display:grid;justify-items:center;gap:3px;padding:6px 2px;border-radius:10px}
+nav.tabs a svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs a[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Путь банкира</h1><span class="pct" id="pct">0 / 60</span></div>
+    <div class="bar"><i id="barfill"></i></div>
+  </header>
+  <section class="view" id="v-plan"></section>
+  <section class="view" id="v-month" hidden></section>
+  <section class="view" id="v-names" hidden></section>
+  <section class="view" id="v-books" hidden></section>
+  <section class="view" id="v-method" hidden></section>
+</div>
+
+<nav class="tabs" aria-label="Разделы">
+  <a href="#plan" data-v="plan"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Программа</a>
+  <a href="#method" data-v="method"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h11"/></svg>Как учусь</a>
+  <a href="#names" data-v="names"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Великие</a>
+  <a href="#books" data-v="books"><svg viewBox="0 0 24 24"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10"/></svg>Книги</a>
+</nav>
+
+<script>
+const Q = ["Фундамент: деньги, учёт, банки","Рынки и инструменты","Школы великих инвесторов","Управление финансовой корпорацией"];
+const QN = ["I","II","III","IV"];
+
+/* greats: [кто, правило, что делаем в этом месяце] */
+const M = [
+{n:1,q:0,title:"Деньги, время, риск",
+ simple:"100 ₽ сегодня дороже, чем 100 ₽ через год. Процент — это аренда денег, инфляция — тающее мороженое, риск — шанс получить не то, что ждал.",
+ weeks:["Деньги и процент. Сложный процент, правило 72","PV и FV, дисконтирование, аннуитеты","NPV, IRR, инфляция, реальная ставка, ключевая ставка","Риск и доходность, диверсификация, ликвидность"],
+ greats:[["Уоррен Баффет","Знания копятся, как сложный процент: он читает большую часть дня.","Заводим привычку: 30–60 минут чтения каждый день, отмечаем в журнале."],
+         ["Ротшильды","Преимущество — в информации, которая приходит раньше и надёжнее.","Собираем свою сеть источников: ЦБ, Минфин, Мосбиржа, отчёты компаний, 2 аналитических канала."]],
+ terms:["сложный процент","правило 72","PV / FV","дисконтирование","аннуитет","NPV","IRR","реальная ставка","ключевая ставка","ОФЗ","диверсификация","ликвидность"],
+ history:"Медичи и вексель: как обходили запрет на процент. Джаннини выдавал кредиты после землетрясения 1906 года. Юнус и микрокредит.",
+ example:"Вклад против инфляции за 10 лет. Сколько переплачиваешь по ипотеке за 20 лет. Почему доходность ОФЗ — точка отсчёта для любой инвестиции в России.",
+ ceo:"Банк зарабатывает на спреде между ценой привлечения и ценой размещения денег. Стоимость капитала — планка, которую должен перепрыгнуть любой проект.",
+ practice:"Excel: таблица сложного процента, график аннуитета, сравнение трёх проектов по NPV.",
+ exam:"Модель ипотеки, NPV и IRR трёх проектов, реальная доходность вклада за 10 лет. Устно объяснить NPV 12-летнему.",
+ links:[["Ключевая ставка Банка России","https://www.cbr.ru/hd_base/KeyRate/","история ставки"],["Khan Academy: основы финансов","https://www.khanacademy.org/economics-finance-domain/core-finance","видео о процентах и дисконтировании"],["Асват Дамодаран","https://pages.stern.nyu.edu/~adamodar/","лекции и данные профессора NYU"]]},
+{n:2,q:0,title:"Язык бизнеса: отчётность",
+ simple:"Отчёт о прибылях — кино за год: сколько заработал. Баланс — фото на дату: что имеешь и кому должен. Денежный поток показывает, где живые деньги.",
+ weeks:["P&L: выручка → EBITDA → EBIT → прибыль, маржи","Баланс: активы = обязательства + капитал","Cash flow: CFO, CFI, CFF, FCF, capex. Связь трёх форм","Коэффициенты: ROE, ROIC, DuPont, долг/EBITDA. Красные флаги"],
+ greats:[["Бенджамин Грэм","Читай отчёт, а не пресс-релиз.","Каждую компанию начинаем с отчётности по МСФО и только потом смотрим новости."],
+         ["Чарли Мангер","Инверсия: спроси, как всё может провалиться.","В каждом разборе пишем список: как эта компания могла бы приукрасить цифры."]],
+ terms:["выручка","EBITDA","чистая прибыль","маржа","баланс","оборотный капитал","FCF","capex","ROE","ROIC","DuPont","Net Debt/EBITDA","МСФО","гудвил"],
+ history:"Лука Пачоли и двойная запись (1494). Крах Enron и аудитора Arthur Andersen. Wirecard и исчезнувшие 1,9 млрд евро.",
+ example:"Сравнить отчёты по МСФО Магнита и X5: у кого выше маржа и почему. Отчёт Coca-Cola (10-K) в базе SEC EDGAR.",
+ ceo:"Финансовый директор и комитет совета по аудиту отвечают за качество прибыли. Совет директоров первым делом смотрит, превращается ли прибыль в деньги.",
+ practice:"Пересобрать три формы отчётности компании в одну таблицу и найти, где прибыль расходится с деньгами.",
+ exam:"Аудит годового отчёта по МСФО (российская + американская компания): 15 коэффициентов, 5 красных флагов, вывод на одну страницу.",
+ links:[["SEC EDGAR","https://www.sec.gov/edgar/search/","отчёты американских компаний (10-K, 10-Q)"],["Центр раскрытия информации","https://www.e-disclosure.ru/","отчётность российских эмитентов"],["IFRS Foundation","https://www.ifrs.org/","стандарты МСФО"],["Письма Berkshire Hathaway","https://www.berkshirehathaway.com/letters/letters.html","как Баффет читает отчёты"]]},
+{n:3,q:0,title:"Банки и центробанки",
+ simple:"Банк берёт деньги ненадолго (вклады) и даёт надолго (кредиты). Если все вкладчики придут за деньгами сразу, начнётся набег. Центробанк — банк для банков и термостат экономики.",
+ weeks:["Как банк создаёт деньги: резервы, M0/M2, мультипликатор","Центробанк: ставка, РЕПО, QE/QT, кредитор последней инстанции","Метрики банка: NIM, CIR, CoR, NPL. Базель: CET1, RWA, LCR","Кризисы: 1907, 1929, 2008, SVB и Credit Suisse 2023"],
+ greats:[["Дж. П. Морган","Кредит прежде всего держится на характере заёмщика (так он сказал Конгрессу в 1912 году).","В разборе банка отдельно оцениваем менеджмент: их решения в прошлых кризисах."],
+         ["Джейми Даймон","«Крепостной баланс»: держи капитал и ликвидность с запасом сверх норм.","Для каждого банка считаем запас CET1 и LCR над требованиями регулятора."]],
+ terms:["частичное резервирование","денежная масса M2","ключевая ставка","РЕПО","QE / QT","NIM","CIR","стоимость риска","NPL","IFRS 9","CET1","RWA","LCR / NSFR","Базель III"],
+ history:"Банк Англии (1694) и правило Бэджета. Паника 1907 года и создание ФРС. Волкер поднимает ставку до 20%. Тэтчер и Big Bang 1986.",
+ example:"Отчётность Сбера: откуда ROE выше 20%. SVB: как рост ставок обесценил облигации банка и запустил набег вкладчиков за 48 часов.",
+ ceo:"Структура банковской группы: розница, корпоративный бизнес, инвестбанк, управление активами. ALCO еженедельно решает, сколько ликвидности держать и по какой ставке привлекать.",
+ practice:"Рассчитать NIM, CIR, CoR и ROE по отчёту одного банка.",
+ exam:"Разбор отчётности Сбера или JPMorgan по 8 метрикам + эссе на 2 страницы «Почему рухнул SVB».",
+ links:[["Банк России: денежно-кредитная политика","https://www.cbr.ru/dkp/","решения по ставке и пресс-релизы"],["Банк России: финансовая стабильность","https://www.cbr.ru/finstab/","обзоры рисков банковского сектора"],["Basel Framework (BIS)","https://www.bis.org/basel_framework/","полный текст стандартов Базеля"],["Сбер: инвесторам","https://www.sberbank.com/ru/investor-relations","отчётность и презентации"],["Ведомости: модернизация Великобритании","https://www.vedomosti.ru/opinion/articles/2009/09/21/modernizaciya-za-11-let-opyt-velikobritanii","Тэтчер и реформы"]]},
+{n:4,q:1,title:"Облигации и кредит",
+ simple:"Облигация — расписка: дай в долг, я буду платить купоны и верну. Когда ставки растут, старые расписки дешевеют. Чем ненадёжнее заёмщик, тем выше процент.",
+ weeks:["Облигация: купон, YTM, НКД, флоатеры, линкеры","Дюрация, выпуклость, DV01, кривая доходности","Кредитный риск: рейтинги, спреды, ковенанты, HY, distressed","Секьюритизация, CDS, еврооблигации, дефолты"],
+ greats:[["Говард Маркс","Мышление второго уровня: что уже учтено в цене и где ошибается большинство. Мысли записывай в мемо.","Пишем первое собственное мемо на одну страницу: где сейчас кредитный цикл."],
+         ["Пол Сингер (Elliott)","Деньги в документации: побеждает тот, кто дочитал проспект и ковенанты до конца.","Читаем проспект одного выпуска облигаций целиком и выписываем все ковенанты."]],
+ terms:["купон","YTM","НКД","дюрация","выпуклость","DV01","кривая доходности","спред","рейтинг","ковенант","high yield","distressed","CDS","MBS / CDO"],
+ history:"Майкл Милкен и мусорные облигации. Дефолт России 1998 года и крах LTCM. Elliott против Аргентины. Ипотечные облигации и кризис 2008 года.",
+ example:"Кривая ОФЗ: нормальная или инвертированная и что это говорит о прогнозе ставки. Почему длинные ОФЗ падают при росте ключевой ставки.",
+ ceo:"Казначейство банка управляет процентным риском: если активы длиннее пассивов, рост ставок бьёт по капиталу. Кредитный комитет решает, кому и на каких условиях давать деньги.",
+ practice:"Посчитать дюрацию и изменение цены трёх облигаций при росте ставки на 1%.",
+ exam:"Учебный портфель облигаций на 1 млн ₽ с целевой дюрацией, стресс-тест ±300 б.п., кредитная записка по одному эмитенту.",
+ links:[["Мемо Говарда Маркса","https://www.oaktreecapital.com/insights/memos","все мемо Oaktree с 1990 года"],["Минфин: госдолг и ОФЗ","https://minfin.gov.ru/ru/perfomance/public_debt/","аукционы и выпуски ОФЗ"],["Московская биржа","https://www.moex.com/","котировки облигаций и кривая доходности"],["Elliott Investment Management","https://en.wikipedia.org/wiki/Elliott_Investment_Management","история фонда и дела Аргентины"]]},
+{n:5,q:1,title:"Акции и оценка бизнеса",
+ simple:"Акция — кусочек бизнеса. Цена — то, что платишь, стоимость — то, что получаешь (Баффет). Бизнес стоит столько, сколько денег он принесёт за всю жизнь, в пересчёте на сегодня.",
+ weeks:["Акции, биржа, IPO, дивиденды, байбэк, индексы, ETF","Мультипликаторы: P/E, EV/EBITDA, P/B, FCF yield","DCF, WACC, CAPM, бета, терминальная стоимость","Грэм, Линч и дивидендная школа Великобритании"],
+ greats:[["Питер Линч","Если не можешь за две минуты объяснить, почему владеешь компанией, — не владей.","Для каждой разобранной компании пишем «двухминутную историю»."],
+         ["Job Curtis","Терпение и дисциплина дивиденда: City of London Investment Trust повышает дивиденд больше 55 лет подряд.","Проверяем у каждой компании историю дивиденда за 10 лет и его покрытие денежным потоком."]],
+ terms:["капитализация","EV","P/E","EV/EBITDA","P/B","FCF yield","DCF","WACC","CAPM","бета","терминальная стоимость","дивиденд","байбэк","free float"],
+ history:"Грэм: «Анализ ценных бумаг» и мистер Рынок. Линч в фонде Magellan. Пузырь доткомов 2000 года.",
+ example:"Оценить Сбер по P/E и P/B и сравнить с JPMorgan. Почему компании роста торгуются с P/E 40, а сырьевые — с P/E 5.",
+ ceo:"Дивидендная политика, байбэк или инвестиции: куда направить прибыль. Совокупная доходность акционеров (TSR) как KPI генерального директора.",
+ practice:"Построить простой DCF одной компании в Excel.",
+ exam:"Полный DCF + сравнительный анализ одной компании в трёх сценариях и инвестзаписка BUY / HOLD / SELL с целевой ценой.",
+ links:[["Данные Дамодарана","https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datacurrent.html","мультипликаторы, бета и WACC по отраслям"],["City of London Investment Trust","https://www.janushenderson.com/en-gb/uk-investment-trusts/trust/the-city-of-london-investment-trust-plc/","отчёты фонда Job Curtis"],["Письма Graham-Newman","https://www.rbcpa.com/benjamin-graham/graham-newman-letters-to-shareholders/","Грэм как управляющий"]]},
+{n:6,q:1,title:"Деривативы, валюта, сырьё",
+ simple:"Фьючерс — договор: куплю у тебя урожай через полгода по сегодняшней цене. Опцион — платная страховка: право, но не обязанность.",
+ weeks:["Форварды и фьючерсы, маржа, контанго и бэквордация","Опционы: колл, пут, профили выплат, стратегии","Биномиальная модель, Black-Scholes, греки, волатильность, свопы","Валюта и сырьё: кэрри-трейд, хеджирование, сквизы"],
+ greats:[["Пол Тюдор Джонс","Сначала защита: думай, сколько можешь потерять, и ищи сделки, где прибыль в разы больше риска.","В каждой учебной сделке заранее пишем максимальный убыток и соотношение прибыль/риск."],
+         ["Уроки Barings и Chocfinger","Лимиты и ликвидность важнее идеи: огромная позиция без выхода опасна.","Для каждого хеджа считаем, что будет при движении цены на 3 сигмы."]],
+ terms:["форвард","фьючерс","маржа","контанго","бэквордация","колл / пут","страйк","премия","греки","implied volatility","Black-Scholes","своп","хеджирование","кэрри-трейд"],
+ history:"Рисовые фьючерсы Додзимы. Кокс, Росс и Рубинштейн: биномиальная модель. Chocfinger (Энтони Уорд) в 2010 году скупил 241 тыс. тонн какао с поставкой. Ник Лисон и крах Barings. Сквиз никеля на LME (2022).",
+ example:"Как экспортёр хеджирует валютную выручку форвардом. Фьючерсы на Brent и доллар на Мосбирже. Почему опционы дорожают перед кризисом.",
+ ceo:"Политика хеджирования корпорации по валюте, сырью и ставкам. Лимиты VaR для трейдинговых столов. Доля трейдинга в доходах Goldman Sachs и JPMorgan.",
+ practice:"Нарисовать профили выплат колла, пута и коллара.",
+ exam:"Оценка опциона по Black-Scholes и биномиальной модели в Excel, хедж для экспортёра, эссе о механике сквиза Chocfinger.",
+ links:[["История Chocfinger","https://medium.com/@Colinthecrypto1/the-tale-of-chocfinger-241-000-tonnes-of-cocoa-and-658-million-ba03519efeb9","сквиз какао 2010 года"],["CME Group Education","https://www.cmegroup.com/education.html","курсы по фьючерсам и опционам от биржи"],["Московская биржа: срочный рынок","https://www.moex.com/ru/derivatives/","фьючерсы и опционы в России"]]},
+{n:7,q:2,title:"Value и Quality",
+ simple:"Сначала: купи доллар за 50 центов (Грэм). Потом: лучше отличный бизнес по честной цене, чем посредственный задёшево (Мангер).",
+ weeks:["Грэм, net-net, запас прочности. Кан, Tweedy Browne, Эвейяр, Кандилл","Баффет и Мангер: ров, owner earnings, страховой float","Компаундеры: Nomad, Fundsmith, Akre, Dorsey, Pabrai, Markel","Распределение капитала генеральным директором («The Outsiders»)"],
+ greats:[["Баффет и Мангер","Круг компетенции: важно не его размер, а знание его границ.","Пишем список отраслей, которые понимаем, и не выходим за него в учебном портфеле."],
+         ["Мониш Пабрай","Не стесняйся «клонировать» идеи лучших инвесторов, но проверяй их сам.","Разбираем свежие портфели 3 великих инвесторов (отчёты 13F) и ищем, почему они купили."]],
+ terms:["запас прочности","внутренняя стоимость","мистер Рынок","net-net","ров (moat)","owner earnings","float","ROIC > WACC","круг компетенции","value trap","компаундер"],
+ history:"Ирвинг Кан инвестировал больше 80 лет. Tweedy Browne, Жан-Мари Эвейяр, Питер Кандилл. Ник Слип и Каис Закария (Nomad): эффект масштаба, которым делятся с клиентом. Сет Кларман. Темплтон и покупки 1939 года.",
+ example:"Costco и Amazon в письмах Nomad. Рвы Visa, Moody's и See's Candies. Почему Markel называют «мини-Berkshire».",
+ ceo:"Главная работа генерального директора — решить, куда пойдёт капитал: реинвестировать, купить, выкупить акции, выплатить дивиденд или погасить долг.",
+ practice:"Прочитать 10 писем Баффета и 5 писем Nomad, выписать 20 принципов.",
+ exam:"Отбор 5 quality-компаний по чек-листу (ROIC, маржа, долг, ров) и защита одного тезиса перед «инвесткомитетом».",
+ links:[["Письма Nomad (Ник Слип)","https://igyfoundation.org.uk/wp-content/uploads/2021/03/Full_Collection_Nomad_Letters_.pdf","полный сборник"],["Fundsmith: документы","https://www.fundsmith.co.uk/documents/","письма Терри Смита"],["Dorsey: рвы и капитал","https://dorseyasset.com/wp-content/uploads/2024/01/competitive-advantage-and-capital-allocation_dorsey-asset-management_january-2024.pdf","Competitive Advantage and Capital Allocation"],["Akre Capital","https://www.akrecapital.com/","модель «трёхногого табурета»"],["Chai with Pabrai","https://www.chaiwithpabrai.com/","лекции и письма Пабрая"],["Tweedy, Browne","https://www.tweedy.com/","исследования классического value"],["Markel Group","https://ir.mklgroup.com/overview/default.aspx","письма акционерам «мини-Berkshire»"]]},
+{n:8,q:2,title:"Портфель, факторы, квант, тренд",
+ simple:"Не клади яйца в одну корзину, и пусть корзины падают в разные дни. Алгоритм ищет повторяющиеся закономерности, а не гениальные идеи.",
+ weeks:["Марковиц, эффективная граница, CAPM, коэффициент Шарпа","Факторы: value, momentum, quality, carry. Клифф Эснесс и AQR","Квант: Саймонс, Торп, бэктест, переобучение","Тренд и CTA, SG Trend Index, паритет риска, модель Йеля"],
+ greats:[["Джим Саймонс","Доверяй данным, а не ощущению. Нанимай учёных, а не «звёзд рынка».","Любая идея этого месяца проверяется на исторических данных до того, как мы её обсуждаем."],
+         ["Клифф Эснесс","Дисциплина: правило записывается заранее и не меняется во время просадки.","Перед бэктестом фиксируем правило письменно и не подгоняем его под результат."]],
+ terms:["корреляция","эффективная граница","Sharpe","alpha / beta","max drawdown","факторы","momentum","value","risk parity","CTA","бэктест","переобучение","smart beta"],
+ history:"Марковиц (1952), Шарп, Фама. AQR и «зима стоимости» 2018–2020. Renaissance и фонд Medallion. Эд Торп. Далио и All Weather. Дэвид Свенсен и эндаумент Йеля.",
+ example:"Состав SG Trend Index и как CTA-фонды заработали в 2008 и 2022 годах, когда падали и акции, и облигации.",
+ ceo:"Стратегическое распределение активов пенсионных фондов и эндаументов. Управление активами как бизнес банка: комиссии, объём, масштаб.",
+ practice:"Сравнить на 20-летней истории портфель 60/40 и портфель из одних акций.",
+ exam:"Бэктест 60/40, паритета риска и momentum 12-1 за 20 лет: Sharpe, просадки, 2008, 2020 и 2022 годы, сравнение с SG Trend Index.",
+ links:[["AQR: исследования","https://www.aqr.com/Insights/Research","статьи Эснесса о факторах"],["Kenneth French Data Library","https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html","бесплатные данные по факторам"],["SG Trend Index: состав","https://wholesale.banking.societegenerale.com/fileadmin/indices_feeds/SG_Trend_Index_Constituents.pdf","фонды в индексе"],["Société Générale CIB","https://wholesale.banking.societegenerale.com/en/","индексы и исследования"],["Bridgewater: исследования","https://www.bridgewater.com/research-and-insights","All Weather и паритет риска"]]},
+{n:9,q:2,title:"Макро и event-driven",
+ simple:"Экономика — машина из кредитных циклов. Кто понимает, где мы в цикле и что сделает центробанк, зарабатывает на ставках, валютах и сырье.",
+ weeks:["Долговые циклы Далио, делевередж","Сорос: рефлексивность, «Чёрная среда» 1992, валютные режимы","Дракенмиллер, Тюдор Джонс, Робертсон, Теппер","Event-driven: слияния, спин-оффы, Elliott. Рынок РФ"],
+ greats:[["Джордж Сорос","Важно не то, прав ты или нет, а сколько зарабатываешь, когда прав, и теряешь, когда неправ.","Каждый макро-тезис записываем вместе с условием, при котором признаём ошибку."],
+         ["Рэй Далио","Боль + рефлексия = прогресс.","Заводим журнал ошибок: что решил, что случилось, чему научился."],
+         ["Стэнли Дракенмиллер","Когда уверенность высока, ставка должна быть крупной. Но сначала сохраняй капитал.","Учимся определять размер позиции по уверенности и риску."]],
+ terms:["кредитный цикл","делевередж","рефлексивность","платёжный баланс","девальвация","peg","асимметрия","merger arbitrage","spin-off","special situations","стресс-сценарий"],
+ history:"Сорос заработал около $1 млрд, сыграв против фунта в 1992 году. Тюдор Джонс в 1987 году. Робертсон и Tiger. Теппер купил банки в 2009 году.",
+ example:"Ставка ЦБ РФ, курс рубля и нефть: связь через обзоры «Антонов такой Антонов» и «Кримсон Дайджест». Как санкции меняют платёжный баланс.",
+ ceo:"Макросценарии в стратегии банка, стресс-тесты регулятора, управление страновым и валютным риском.",
+ practice:"Вести макро-дневник: ставка, курс, нефть, инфляция раз в неделю.",
+ exam:"Месячный макро-дневник с тремя сценариями и двумя макро-трейдами (вход, стоп, обоснование), затем разбор ошибок.",
+ links:[["Сорос и Банк Англии","https://www.investopedia.com/ask/answers/08/george-soros-bank-of-england.asp","разбор сделки 1992 года"],["Далио о Китае","https://www.linkedin.com/pulse/china-100-year-storm-horizon-how-five-big-forces-playing-ray-dalio-wysbc","пять больших сил"],["Economic Principles (Далио)","https://www.economicprinciples.org/","книги и видео о долговых циклах"],["Письмо Теппера (2010)","https://aletteraday.substack.com/p/letter-101-david-tepper-2010","ставка на банки"],["Джулиан Робертсон","https://www.valuewalk.com/julian-robertson-jr-resource-page/","материалы о Tiger"],["Банк России: ДКП","https://www.cbr.ru/dkp/","решения по ставке"]]},
+{n:10,q:3,title:"Инвестбанкинг, M&A, PE, активизм",
+ simple:"Инвестбанк — сват и архитектор сделок: помогает компаниям объединяться, занимать и продавать доли. PE-фонд покупает компанию в долг, улучшает её и продаёт.",
+ weeks:["Устройство инвестбанка: ECM, DCM, андеррайтинг","M&A: синергии, accretion/dilution, due diligence","LBO и PE, девелопмент и финансирование недвижимости","Активизм: Айкан, Экман, Elliott"],
+ greats:[["Генри Кравис (KKR)","Менеджмент должен думать как собственник: дай ему долю в компании.","В LBO-модели закладываем опционную программу для менеджмента и считаем её влияние."],
+         ["Стивен М. Росс","Сложный проект собирается из многих источников капитала.","Разбираем структуру финансирования Hudson Yards."],
+         ["Айкан и Экман","Публичный аргумент с цифрами меняет компании.","Пишем активистское письмо совету директоров."]],
+ terms:["ECM / DCM","андеррайтинг","book building","M&A","синергия","accretion / dilution","due diligence","LBO","IRR / MOIC","NOI","cap rate","проектное финансирование","proxy fight","poison pill"],
+ history:"Морган создаёт U.S. Steel. KKR и сделка RJR Nabisco. Шварцман и Blackstone. Related Companies: от налоговых схем для социального жилья до Hudson Yards. Экман: Canadian Pacific, Herbalife.",
+ example:"Финансирование Hudson Yards: банковские кредиты, партнёры, капитал по программе EB-5, муниципальные облигации на инфраструктуру. Крупнейшие IPO на Мосбирже.",
+ ceo:"Стратегия M&A и интеграция после сделки. Совет директоров при враждебном поглощении. Конфликт интересов внутри инвестбанка.",
+ practice:"Простая LBO-модель: долг, денежный поток, выход, IRR.",
+ exam:"LBO-модель с IRR и MOIC, accretion/dilution реальной сделки, тизер на 5 слайдов, активистское письмо совету директоров.",
+ links:[["Письма Карла Айкана","https://carlicahn.com/letters/","публичные кампании"],["Pershing Square: материалы","https://pershingsquareholdings.com/materials/","презентации Экмана"],["KKR: инсайты","https://www.kkr.com/","исследования private equity"],["Related Companies","https://www.related.com/","проекты Стивена Росса"],["Hudson Yards","https://www.hudsonyardsnewyork.com/","крупнейший частный девелопмент США"]]},
+{n:11,q:3,title:"Управление банком",
+ simple:"Банк — жонглёр с плечом 10:1. Работа главы банка — зарабатывать на рисках и не уронить ни одного шара: кредит, ставки, ликвидность, репутация.",
+ weeks:["ALM, трансфертное ценообразование, ликвидность","Капитал: Базель, RWA, ICAAP, RAROC","Риски: PD/LGD/EAD, VaR, операционный риск, стресс-тесты","Главы мировых банков и их модели"],
+ greats:[["Джейми Даймон","Ежегодное письмо акционерам с честным разбором ошибок, включая «Лондонского кита» 2012 года.","Читаем последнее письмо Даймона и выписываем 10 управленческих принципов."],
+         ["Серджио Эрмотти (UBS)","Интеграция поглощённого банка — это дисциплина, план и скорость.","Составляем план первых 100 дней после слияния двух банков."],
+         ["Брайан Мойнихан, Джейн Фрейзер","«Ответственный рост» (Bank of America) и упрощение структуры (Citi).","Для учебного банка формулируем стратегию в одной фразе и 3 метрики её успеха."]],
+ terms:["ALM","FTP","IRRBB","ICAAP","RAROC","PD / LGD / EAD","VaR / ES","стресс-тест","risk appetite","три линии защиты","TLAC","bail-in","AML / KYC","ROTCE"],
+ history:"Даймон покупает Bear Stearns и WaMu. Интеграция Credit Suisse в UBS. Мультинациональная модель Santander (Ана Ботин).",
+ example:"Сравнить модели: JPMorgan (универсальный банк), Goldman Sachs (уход из розницы), Morgan Stanley (ставка на управление капиталом), BNY (платформа хранения активов).",
+ ceo:"Правление, кредитный комитет, ALCO и риск-комитет совета. Распределение капитала между бизнесами по RAROC. KPI главы банка: ROTCE, CET1, CIR.",
+ practice:"Распределить капитал между тремя бизнесами банка по RAROC.",
+ exam:"Аудит JPMorgan, Citi и Сбера по 15 метрикам + симуляция ALCO: ставка +4 п.п., отток 15% вкладов, пять решений.",
+ links:[["JPMorgan: годовой отчёт и письмо Даймона","https://www.jpmorganchase.com/ir/annual-report","главный учебник управления банком"],["ФРС: стресс-тесты","https://www.federalreserve.gov/supervisionreg/stress-tests-capital-planning.htm","сценарии и результаты"],["ЕЦБ: банковский надзор","https://www.bankingsupervision.europa.eu/","приоритеты надзора в Европе"],["UBS: инвесторам","https://www.ubs.com/global/en/investor-relations.html","интеграция Credit Suisse"]]},
+{n:12,q:3,title:"Стратегия и выпускной проект",
+ simple:"Топ-менеджер решает один вопрос: куда направить следующий рубль капитала и людей, чтобы через 10 лет компания стоила больше.",
+ weeks:["Стратегия: рвы, портфель бизнесов, экосистемы, финтех","Корпоративное управление: совет, агентская проблема, вознаграждение","Выпускной проект: финмодель и стратегия банка","Выпускной проект: письмо акционерам и защита"],
+ greats:[["Рэй Далио","Записанные принципы делают решения повторяемыми.","Пишем свои 10 принципов управления финансовой компанией."],
+         ["Баффет и Даймон","Письмо акционерам — главный инструмент управления: честно о цифрах, ошибках и планах.","Финальная работа — письмо акционерам своего учебного банка."]],
+ terms:["стратегия","портфель бизнесов","SOTP","hurdle rate","economic profit","экосистема","финтех","CBDC","стейблкоин","независимый директор","агентская проблема"],
+ history:"«The Outsiders»: Сингелтон, Мерфи, Баффет. GE Capital как пример конгломерата-неудачника. Морган и Ротшильды: почему одни династии живут веками.",
+ example:"Сравнить модели Berkshire, KKR, Blackstone и Bridgewater. Экосистема Сбера: где банк, а где технологическая компания.",
+ ceo:"Полный цикл управления: стратегия → бюджет → капитал → риск → вознаграждение → отчёт акционерам.",
+ practice:"Собрать финмодель условного банка на 5 лет: P&L, баланс, капитал.",
+ exam:"Стратегия условного банка на 5 лет: финмодель, три инициативы, одна M&A-сделка, risk appetite, письмо акционерам на 10 страниц. Защита перед «советом директоров».",
+ links:[["Principles (Далио)","https://www.principles.com/","принципы жизни и работы"],["Письма Berkshire Hathaway","https://www.berkshirehathaway.com/letters/letters.html","образец письма акционерам"],["JPMorgan: письмо Даймона","https://www.jpmorganchase.com/ir/annual-report","образец письма главы банка"]]}
+];
+
+/* [кто, кем является, что берём в программу, месяц] */
+const NAMES = [
+ {h:"Великие банкиры и финансисты", items:[
+  ["Дж. П. Морган","основатель J. P. Morgan & Co.","Кредит держится на характере; спасение рынка в 1907 году","М3, М10"],
+  ["Майер Амшель Ротшильд","основатель банковской династии","Своя информационная сеть","М1"],
+  ["Уоррен Баффет","Berkshire Hathaway","Ежедневное чтение, круг компетенции, письмо акционерам","М1, М7, М12"],
+  ["Джейми Даймон","председатель и CEO JPMorgan Chase","«Крепостной баланс», честное письмо акционерам","М3, М11"],
+  ["Амадео Джаннини","основатель Bank of Italy (позже Bank of America)","Банк для простых людей","М1"],
+  ["Джордж Сорос","Quantum Fund","Тезис + условие ошибки, асимметрия","М9"],
+  ["Джим Саймонс","Renaissance Technologies","Данные важнее ощущений","М8"],
+  ["Рэй Далио","Bridgewater Associates","Журнал ошибок, записанные принципы","М9, М12"],
+  ["Генри Кравис","сооснователь KKR","Менеджмент как собственник","М10"],
+  ["Мухаммад Юнус","основатель Grameen Bank","Микрокредит","М1"]]},
+ {h:"Главы ведущих банков сейчас", note:"Должности по вашему списку на 12.11.2026.", items:[
+  ["Джейми Даймон","председатель и CEO JPMorgan Chase","Письмо акционерам, запас капитала","М11"],
+  ["Брайан Мойнихан","председатель и CEO Bank of America","«Ответственный рост»","М11"],
+  ["Серджио Эрмотти","Group CEO UBS","Интеграция Credit Suisse","М11"],
+  ["Дэвид Соломон","председатель и CEO Goldman Sachs","Фокус на сильных бизнесах, уход из розницы","М11"],
+  ["Тед Пик","председатель и CEO Morgan Stanley","Ставка на управление капиталом клиентов","М11"],
+  ["Ана Ботин","исполнительный председатель Santander","Мультинациональная модель","М11"],
+  ["Джейн Фрейзер","CEO Citigroup","Упрощение структуры","М11"],
+  ["Жорж Эльхедери","Group CEO HSBC","Упрощение структуры группы","М11"],
+  ["Чарльз Шарф","CEO Wells Fargo","Исправление риска и контроля","М11"],
+  ["Робин Винс","CEO BNY","Банк как платформа","М11"]]},
+ {h:"Великие инвесторы", items:[
+  ["Питер Линч","Fidelity Magellan","Двухминутная история о компании","М5"],
+  ["Стэнли Дракенмиллер","Duquesne Capital","Крупная ставка при высокой уверенности","М9"],
+  ["Бенджамин Грэм","отец стоимостного инвестирования","Запас прочности, читать отчёт","М2, М7"],
+  ["Чарли Мангер","Berkshire Hathaway","Инверсия, ментальные модели","М2, М7"],
+  ["Джон Темплтон","Templeton Growth Fund","Покупать на максимуме пессимизма","М7"],
+  ["Говард Маркс","Oaktree Capital","Мышление второго уровня, мемо","М4"],
+  ["Сет Кларман","Baupost Group","Терпение и специальные ситуации","М7"],
+  ["Карл Айкан","активист-инвестор","Публичная кампания с цифрами","М10"],
+  ["Пол Тюдор Джонс","Tudor Investment","Защита прежде всего","М6, М9"],
+  ["Клифф Эснесс","AQR Capital Management","Дисциплина правила","М8"],
+  ["Билл Экман","Pershing Square","Концентрация и активизм","М10"]]},
+ {h:"Ваши авторитеты и школы", items:[
+  ["Антонов такой Антонов","аналитик рынка РФ (Алексей Антонов)","Еженедельный контекст рынка, его список книг","каждую неделю"],
+  ["Кримсон Дайджест","Иван Данилов, геоэкономика","Еженедельный макро-контекст, его список книг","каждую неделю"],
+  ["Старая школа value","Грэм, Ирвинг Кан, Tweedy Browne, Эвейяр, Кандилл, Билл Миллер","Запас прочности, терпение","М7"],
+  ["Покупаем хорошие бизнесы","Berkshire, Линч, Пабрай, Nomad, Akre, Dorsey, Fundsmith, Markel","Ров и капитал-аллокация","М7"],
+  ["Job Curtis","управляющий City of London Investment Trust","Дисциплина дивиденда","М5"],
+  ["Chocfinger","трейдер какао Энтони Уорд","Лимиты и ликвидность","М6"],
+  ["Стивен М. Росс","основатель Related Companies","Сборка капитала для мегапроекта","М10"],
+  ["Société Générale","SG Trend Index","Трендовые CTA-стратегии","М8"],
+  ["Elliott, Теппер, Робертсон","макро и event-driven","Документация, асимметрия","М4, М9"]]}
+];
+
+/* [автор, название, месяцы (0 = весь год), продвинутый?] */
+const BOOKS = [
+ {h:"Финансы, рынки, инструменты", items:[
+  ["Bodie, Kane, Marcus","Investments",[8]],["Frederic Mishkin","The Economics of Money, Banking and Financial Markets",[3]],
+  ["John C. Hull","Опционы, фьючерсы и другие производные инструменты",[6]],["Frank J. Fabozzi","Рынок облигаций. Анализ и стратегии",[4]],
+  ["Лоренс Макмиллан","Макмиллан об опционах",[6]],["Бенджамин Грэм","Разумный инвестор; Анализ ценных бумаг",[5,7]],
+  ["Питер Линч","Метод Питера Линча; Переиграть Уолл-стрит",[5]],["Howard Marks","The Most Important Thing; Mastering the Market Cycle",[4]],
+  ["Lasse H. Pedersen","Efficiently Inefficient",[8,9]],["Antti Ilmanen","Expected Returns",[8]],
+  ["Ray Dalio","Big Debt Crises",[9]],["George Soros","Алхимия финансов",[9]],
+  ["Ernie Chan","Quantitative Trading; Algorithmic Trading",[8],1],["Томас Соуэлл","Принципы экономики",[1]],
+  ["Хесус Уэрта де Сото","Деньги, банковский кредит и экономические циклы",[3]],["CFA Institute","Программа CFA, уровни I–III",[0],1]]},
+ {h:"Корпоративные финансы, банки, учёт", items:[
+  ["Brealey, Myers, Allen","Principles of Corporate Finance",[1]],["Ross, Westerfield, Jaffe","Corporate Finance",[1,5]],
+  ["Aswath Damodaran","Investment Valuation; The Little Book of Valuation",[5]],["McKinsey (Koller и др.)","Valuation",[5]],
+  ["Joshua Rosenbaum, Joshua Pearl","Investment Banking",[10]],["Fridson, Alvarez","Financial Statement Analysis",[2]],
+  ["Howard Schilit","Financial Shenanigans",[2]],["John C. Hull","Risk Management and Financial Institutions",[11]],
+  ["Moorad Choudhry","The Principles of Banking",[3,11]],["William Thorndike","The Outsiders",[7,12]],
+  ["Lawrence Cunningham","The Essays of Warren Buffett",[12]]]},
+ {h:"История и биографии", items:[
+  ["Ron Chernow","The House of Morgan",[10]],["Niall Ferguson","The House of Rothschild; The Ascent of Money",[1]],
+  ["Liaquat Ahamed","Lords of Finance",[3]],["Peter L. Bernstein","Против богов",[1]],
+  ["Sebastian Mallaby","More Money Than God",[9]],["Jack Schwager","Market Wizards",[9]],
+  ["Alice Schroeder","The Snowball",[7]],["Gregory Zuckerman","The Man Who Solved the Market",[8]],
+  ["Burrough, Helyar","Barbarians at the Gate",[10]],["Duff McDonald","Last Man Standing",[11]],
+  ["Scott Wapner","When the Wolves Bite",[10]],["Muhammad Yunus","Banker to the Poor",[1]]]},
+ {h:"Список Антонова: реально серьёзная литература", items:[
+  ["Frans de Weert","Exotic Options Trading",[6],1],["Aswath Damodaran","Investment Valuation",[5]],
+  ["Joshua Rosenbaum","Investment Banking",[10]],["David F. DeRosa","Options on Foreign Exchange",[6],1],
+  ["John Banko","Modeling Mortgage-Backed Securities",[4],1],["Mohamed Bouzoubaa","Exotic Options and Hybrids",[6],1],
+  ["Uwe Wystup","FX Options and Structured Products",[6],1],["Giles Jewitt","FX Derivatives Trader School",[6],1],
+  ["Frank J. Fabozzi","Handbook of Structured Financial Products",[4],1],["Frank J. Fabozzi","The Handbook of European Structured Financial Products",[4],1],
+  ["Sébastien Bossu","Advanced Equity Derivatives: Volatility and Correlation",[6],1]]},
+ {h:"Список Антонова: история и художественная", items:[
+  ["Бартон Биггс","Вышел хеджер из тумана",[9]],["Майкл Льюис","Большая игра на понижение",[4]],
+  ["Майкл Льюис","Flash Boys",[8]],["Майкл Льюис","Покер лжеца",[4]],
+  ["Майкл Льюис","Бумеранг",[9]],["Влад Горячев","Производные нуля: дневник структуратора",[6]],
+  ["Эндрю Росс Соркин","Слишком большие, чтобы рухнуть",[11]],["Пётр Авен","Время Березовского",[9]],
+  ["Жак Лоран","Опасные игры с деривативами",[6]],["Роджер Лоуэнстайн","Когда гений терпит поражение (LTCM)",[4]],
+  ["Скотт Паттерсон","Кванты",[8]],["Пётр Авен","Революция Гайдара",[3]],
+  ["Сергей Васильев","Как мы покупали русский интернет",[10]]]},
+ {h:"Список Антонова: история, non-fiction", items:[
+  ["Дэниел Ергин","Добыча",[6]],["Дэниел Ергин","В поисках энергии",[6]],
+  ["Евгения Письменная","По большому счёту: история Центрального банка России",[3]],["Андрей Черкасенко","Инвестирование в уран",[6]],
+  ["Тейн Густафсон","Колесо фортуны. Битва за нефть и власть в России",[9]],["Питер Норман","Управляя рисками",[11]],
+  ["Питер Норман","Сантехники и провидцы",[11]]]},
+ {h:"Список Антонова: становление компаний", items:[
+  ["Брэд Стоун","The Everything Store",[7]],["Эллен Уолд","Saudi Inc",[12]],
+  ["Василий Мартов","Мечта о Тройке",[10]],["Уильям Коэн","Деньги и власть (Goldman Sachs)",[10]],
+  ["Дэвид Киркпатрик","Социальная сеть",[12]],["Ник Билтон","Инкубатор Twitter",[12]],
+  ["Владислав Дорофеев","Яндекс Воложа",[12]],["Джейсон Шрайер","Кровь, пот и пиксели",[12]],
+  ["Адам Лашински","Uber. Инсайдерская история",[12]]]},
+ {h:"Список Антонова: развитие мышления", items:[
+  ["Джеймс Гилмор","Экономика впечатлений",[12]],["Лоретта Бройнинг","Гормоны счастья",[0]],
+  ["Александр Аузан","Культурные коды экономики",[12]],["Джим Коллинз","От хорошего к великому",[12]],
+  ["Питер Тиль","От нуля к единице",[12]],["Малкольм Гладуэлл","Гении и аутсайдеры",[0]]]},
+ {h:"Список Кримсон Дайджест", items:[
+  ["Frank J. Fabozzi","Рынок облигаций. Анализ и стратегии (последнее издание)",[4]],
+  ["John C. Hull","Опционы, фьючерсы и другие производные инструменты",[6]],
+  ["Лоренс Макмиллан","Макмиллан об опционах",[6]],
+  ["Ernie Chan","Quantitative Trading; Algorithmic Trading",[8],1],
+  ["Хесус Уэрта де Сото","Деньги, банковский кредит и экономические циклы",[3]],
+  ["Томас Соуэлл","Принципы экономики",[1]],
+  ["—","Бедность и богатство: руководство православного предпринимателя",[12]],
+  ["Бретт Стинбарджер","Психология трейдинга",[9]],
+  ["Питер Линч","Метод Питера Линча",[5]],
+  ["Alex Hormozi","$100M Offers",[12]],
+  ["Энни Дьюк","Принцип ставок",[9]]]}
+];
+
+const HABITS = [
+ ["Каждый день","Чтение 30–60 минут","Баффет"],
+ ["Каждый урок","Инверсия: «как это может провалиться?»","Мангер"],
+ ["Каждая компания","Двухминутная история","Линч"],
+ ["Каждый тезис","Условие, при котором ты неправ","Сорос"],
+ ["Каждая ошибка","Запись в журнал ошибок","Далио"],
+ ["Каждая идея","Проверка данными","Саймонс"],
+ ["Раз в месяц","Мемо на одну страницу","Маркс"],
+ ["Раз в квартал","Письмо акционерам самому себе","Баффет, Даймон"]
+];
+
+const KEY = "bankerPath.v1";
+let done = {};
+try { done = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e) { done = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(done)); } catch(e) {} };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const keysOf = n => [1,2,3,4].map(i=>`w${n}-${i}`).concat(`w${n}-x`);
+const mDone = n => keysOf(n).filter(k=>done[k]).length;
+
+function current(){
+  for (const m of M){ const ks = keysOf(m.n);
+    for (let i=0;i<ks.length;i++) if(!done[ks[i]]) return {m, i}; }
+  return null;
+}
+
+function renderPlan(){
+  const c = current();
+  let h = c ? `<a class="cont" href="#m${c.m.n}">
+      <p class="lbl">Продолжить · Месяц ${c.m.n} · ${c.i<4?"Неделя "+(c.i+1):"Контрольная"}</p>
+      <h2>${esc(c.i<4?c.m.weeks[c.i]:c.m.title)}</h2>
+      <span class="go">Открыть месяц</span></a>`
+    : `<div class="cont"><p class="lbl">Готово</p><h2>Курс пройден</h2></div>`;
+  h += `<details class="goal"><summary>Цель курса</summary><div class="goalbody">
+      <p><b>Откуда:</b> с абсолютного нуля, объяснения как для 12-летнего.</p>
+      <p><b>Куда:</b> финансы, рынки, все основные инструменты и термины, подходы великих финансистов. Управление финансами и финансовой корпорацией на уровне топ-менеджмента крупного банка.</p>
+      <p><b>Срок:</b> 12 месяцев, 48 недель, 5 уроков в неделю.</p></div></details>`;
+  Q.forEach((t, qi) => {
+    h += `<div class="quarter"><h2><b>${QN[qi]}</b>${esc(t)}</h2>`;
+    M.filter(m=>m.q===qi).forEach(m => {
+      const d = mDone(m.n);
+      h += `<a class="mrow${c&&c.m.n===m.n?" cur":""}" href="#m${m.n}"><span class="mnum${d===5?" done":""}">М${m.n}</span><span class="t">${esc(m.title)}</span><span class="c">${d}/5 ›</span></a>`;
+    });
+    h += `</div>`;
+  });
+  document.getElementById("v-plan").innerHTML = h;
+}
+
+function booksFor(n){
+  const seen = new Set(), out = [];
+  BOOKS.forEach(g => g.items.forEach(([a,t,ms,adv]) => {
+    const k = a+t; if (ms.includes(n) && !seen.has(k)) { seen.add(k); out.push([a,t,adv]); }
+  }));
+  return out;
+}
+
+function renderMonth(n){
+  const m = M[n-1];
+  const prev = M[n-2], next = M[n];
+  const steps = m.weeks.map((w,i)=>`<li><label class="step" for="w${n}-${i+1}"><input type="checkbox" id="w${n}-${i+1}" data-k="w${n}-${i+1}"${done[`w${n}-${i+1}`]?" checked":""}><span><small>Неделя ${i+1}</small>${esc(w)}</span></label></li>`).join("")
+    + `<li><label class="step exam" for="w${n}-x"><input type="checkbox" id="w${n}-x" data-k="w${n}-x"${done[`w${n}-x`]?" checked":""}><span><small>Контрольная</small>${esc(m.exam)}</span></label></li>`;
+  const bk = booksFor(n);
+  document.getElementById("v-month").innerHTML = `
+    <a class="back" href="#plan">‹ Программа</a>
+    <div class="mhead"><p class="lbl">Квартал ${QN[m.q]} · Месяц ${n} · ${mDone(n)}/5</p><h2>${esc(m.title)}</h2></div>
+    <p class="simple">${esc(m.simple)}</p>
+    <div class="card"><p class="lbl">Шаги месяца</p><ol class="steps">${steps}</ol>
+      <p class="note">Неделя засчитывается, когда сданы все 5 уроков с баллом от 7/10.</p></div>
+    <div class="card"><p class="lbl">Что берём у великих</p>${m.greats.map(([w,r,a])=>`<div class="great"><b>${esc(w)}</b><span>${esc(r)}</span><em>Делаем: ${esc(a)}</em></div>`).join("")}</div>
+    <details class="more"><summary>Термины и инструменты</summary><div class="morebody"><div class="chips">${m.terms.map(t=>`<span>${esc(t)}</span>`).join("")}</div></div></details>
+    <details class="more"><summary>История</summary><div class="morebody"><p>${esc(m.history)}</p></div></details>
+    <details class="more"><summary>Реальные примеры</summary><div class="morebody"><p>${esc(m.example)}</p></div></details>
+    <details class="more"><summary>Взгляд из кабинета CEO</summary><div class="morebody"><p>${esc(m.ceo)}</p></div></details>
+    <details class="more"><summary>Практикум</summary><div class="morebody"><p>${esc(m.practice)}</p></div></details>
+    <details class="more"><summary>Книги месяца · ${bk.length}</summary><div class="morebody"><ul class="list">${bk.map(([a,t,adv])=>`<li><b>${esc(t)}</b><span>${esc(a)}${adv?' · <span class="tag adv">углублённо</span>':""}</span></li>`).join("")}</ul></div></details>
+    <div class="card"><p class="lbl">Актуальные материалы</p><ul class="links">${m.links.map(([t,u,d])=>`<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ↗<span>${esc(d)}</span></a></li>`).join("")}</ul></div>
+    <div class="pager">${prev?`<a href="#m${prev.n}"><small>‹ Месяц ${prev.n}</small>${esc(prev.title)}</a>`:""}${next?`<a class="r" href="#m${next.n}"><small>Месяц ${next.n} ›</small>${esc(next.title)}</a>`:""}</div>`;
+}
+
+function renderNames(){
+  document.getElementById("v-names").innerHTML = `<p class="note">Кто они и что именно мы берём от каждого в программу.</p>` + NAMES.map(g => `<div class="card"><h3>${esc(g.h)}</h3>
+    ${g.note?`<p class="note">${esc(g.note)}</p>`:""}
+    <ul class="list">${g.items.map(([a,b,c,d])=>`<li><b>${esc(a)}</b><span>${esc(b)}</span><span class="take">Берём: ${esc(c)}</span><span class="tag">${esc(d)}</span></li>`).join("")}</ul></div>`).join("");
+}
+
+function renderBooks(){
+  const ml = ms => ms.map(x=>x===0?"весь год":"М"+x).join(", ");
+  document.getElementById("v-books").innerHTML = `<p class="note">Метка месяца показывает, когда книга нужна. «Углублённо» — после базового учебника по теме.</p>` + BOOKS.map(g => `<div class="card"><h3>${esc(g.h)}</h3>
+    <ul class="list">${g.items.map(([a,t,ms,adv])=>`<li><b>${esc(t)}</b><span>${esc(a)}</span><span class="tag">${ml(ms)}</span>${adv?'<span class="tag adv">углублённо</span>':""}</li>`).join("")}</ul></div>`).join("");
+}
+
+function renderMethod(){
+  document.getElementById("v-method").innerHTML = `
+  <div class="card"><h3>Как проходить урок</h3><ol class="howto">
+    <li>Открой Claude Code в папке «Финансы» и напиши <b>урок</b>.</li>
+    <li>Прочитай объяснение и реши задания. Ответы присылай и пиши <b>проверь</b>.</li>
+    <li>Набрал от 7 из 10 — урок засчитан. Меньше — повторяем тему.</li>
+    <li>Сдал 5 уроков недели — отметь неделю здесь, в «Программе».</li>
+  </ol></div>
+  <div class="card"><h3>Привычки великих</h3><ul class="list">
+    ${HABITS.map(([w,h,who])=>`<li><b>${esc(h)}</b><span>${esc(w)} · ${esc(who)}</span></li>`).join("")}
+  </ul></div>
+  <div class="card"><h3>Что писать наставнику</h3><div class="cmds">
+    <code>урок</code><span>следующий урок</span>
+    <code>проверь</code><span>проверка ответов</span>
+    <code>проще</code><span>объяснить по-другому</span>
+    <code>глубже</code><span>как это видит топ-менеджер</span>
+    <code>повтори</code><span>блиц из 10 вопросов</span>
+    <code>контрольная</code><span>контрольная месяца</span>
+    <code>где я</code><span>прогресс и что дальше</span>
+  </div></div>
+  <div class="card"><h3>Каждую неделю</h3><p>Одно письмо акционерам (Berkshire, Nomad, Fundsmith, Даймон, Айкан, Pershing Square) и обзоры «Антонов такой Антонов» и «Кримсон Дайджест».</p></div>
+  <div class="card"><h3>Отметки</h3><p class="note">Хранятся только в этом браузере на этом телефоне.</p>
+    <button class="reset" id="reset" type="button">Сбросить все отметки</button>
+    <p class="note" id="resetnote" hidden>Нажми ещё раз, чтобы сбросить.</p></div>`;
+}
+
+function updateHeader(){
+  let cnt = 0; M.forEach(m => cnt += mDone(m.n));
+  document.getElementById("pct").textContent = cnt + " / 60";
+  document.getElementById("barfill").style.width = (cnt/60*100) + "%";
+}
+
+document.addEventListener("change", e => {
+  const k = e.target.dataset && e.target.dataset.k; if (!k) return;
+  if (e.target.checked) done[k] = 1; else delete done[k];
+  save(); updateHeader();
+  const n = +k.slice(1).split("-")[0];
+  const lbl = document.querySelector("#v-month .mhead .lbl");
+  if (lbl) lbl.textContent = `Квартал ${QN[M[n-1].q]} · Месяц ${n} · ${mDone(n)}/5`;
+});
+let armed = false;
+document.addEventListener("click", e => {
+  if (e.target.id !== "reset") return;
+  const nEl = document.getElementById("resetnote");
+  if (!armed) { armed = true; nEl.hidden = false; setTimeout(()=>{armed=false; nEl.hidden=true;}, 4000); return; }
+  done = {}; save(); updateHeader(); armed = false; nEl.hidden = true;
+});
+
+const VIEWS = ["plan","method","names","books"];
+function route(){
+  const h = location.hash.slice(1);
+  const mm = /^m(\d{1,2})$/.exec(h);
+  let v = VIEWS.includes(h) ? h : "plan";
+  document.querySelectorAll("section.view").forEach(s => s.hidden = true);
+  if (mm && +mm[1] >= 1 && +mm[1] <= 12) { renderMonth(+mm[1]); document.getElementById("v-month").hidden = false; v = "plan"; }
+  else { if (v === "plan") renderPlan(); document.getElementById("v-"+v).hidden = false; }
+  document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.v === v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  window.scrollTo(0,0);
+}
+renderNames(); renderBooks(); renderMethod(); updateHeader();
+window.addEventListener("hashchange", route);
+route();
+</script>
+<script>
+if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>
